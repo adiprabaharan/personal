@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Markov chains and gambler's ruin — Your Name</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f1efe9; --paper-raised:#fbfaf6; --ink:#16233b; --ink-soft:#3c4a63;
+    --ink-faint:#7c8698; --gold:#b8892b; --teal:#2f6b66; --line:#d8d3c4;
+    --line-strong:#b9b2a0; --margin-w:84px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:
+      linear-gradient(var(--paper), var(--paper)),
+      repeating-linear-gradient(0deg, transparent 0 27px, var(--line) 27px 28px),
+      repeating-linear-gradient(90deg, transparent 0 27px, var(--line) 27px 28px);
+    color:var(--ink); font-family:'IBM Plex Sans',sans-serif; font-size:16px; line-height:1.7;
+  }
+  .margin-rule{position:fixed; top:0; bottom:0; left:var(--margin-w); width:1px; background:rgba(184,58,58,0.28); z-index:1;}
+  @media (max-width:720px){ .margin-rule{display:none;} }
+  nav{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:28px var(--margin-w) 28px calc(var(--margin-w) + 32px);
+    border-bottom:1px solid var(--line-strong);
+  }
+  @media (max-width:720px){ nav{padding:22px 20px;} }
+  .brand{font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink-soft);}
+  .brand strong{color:var(--ink); font-weight:600;}
+  nav a.back{font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink-soft); text-decoration:none;}
+  nav a.back:hover, nav a.back:focus-visible{color:var(--gold);}
+
+  article{padding:72px var(--margin-w) 96px calc(var(--margin-w) + 32px); max-width:720px;}
+  @media (max-width:720px){ article{padding:56px 20px 72px;} }
+
+  .eyebrow{font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); margin-bottom:14px;}
+  h1{font-family:'Newsreader',serif; font-weight:500; font-size:clamp(1.9rem,4vw,2.6rem); line-height:1.15; margin-bottom:12px;}
+  h2{font-family:'Newsreader',serif; font-weight:500; font-size:1.5rem; margin:48px 0 14px;}
+  .meta{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-faint); margin-bottom:40px;}
+  article p{color:var(--ink-soft); margin-bottom:18px; max-width:62ch;}
+  article strong{color:var(--ink);}
+  article li{color:var(--ink-soft); margin:0 0 8px 20px; max-width:60ch;}
+  ul{margin-bottom:18px;}
+
+  .box{
+    background:var(--paper-raised); border-left:3px solid var(--teal);
+    padding:18px 24px; margin:26px 0; font-family:'IBM Plex Mono',monospace;
+    font-size:14px; line-height:1.9; color:var(--ink); border-radius:0 4px 4px 0; overflow-x:auto;
+  }
+  .box.gold{border-left-color:var(--gold);}
+  .box .label{display:block; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:6px;}
+
+  .matrix-wrap{overflow-x:auto; margin:26px 0;}
+  table.matrix{
+    border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:14px;
+    background:var(--paper-raised); border:1px solid var(--line-strong);
+  }
+  table.matrix th, table.matrix td{padding:8px 16px; text-align:center; border:1px solid var(--line);}
+  table.matrix th{color:var(--ink-faint); font-weight:400; font-size:12px;}
+  table.matrix td.abs{color:var(--teal); font-weight:500;}
+
+  details{
+    background:var(--paper-raised); border:1px solid var(--line-strong); border-radius:4px;
+    padding:14px 20px; margin:22px 0; max-width:62ch;
+  }
+  summary{
+    cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink);
+  }
+  summary:focus-visible{outline:2px solid var(--gold); outline-offset:4px;}
+  details[open] summary{margin-bottom:12px; color:var(--teal);}
+  details p{font-size:15px; margin-bottom:10px;}
+  .try{font-style:italic; color:var(--ink); }
+  em{font-family:'Newsreader',serif;}
+  ::selection{background:rgba(184,137,43,.25);}
+</style>
+</head>
+<body>
+<div class="margin-rule" aria-hidden="true"></div>
+<nav>
+  <div class="brand"><strong>Your Name</strong> — mathematics</div>
+  <a class="back" href="index.html">← back</a>
+</nav>
+
+<article>
+  <div class="eyebrow">Notes · Probability</div>
+  <h1>Markov chains, transition matrices, and gambler's ruin</h1>
+  <div class="meta">Working notes · about 8 min read</div>
+
+  <p>
+    A lot of probability problems that look different are the same problem in disguise:
+    a system hops between states, and you want to know where it ends up, or how long it
+    takes. Markov chains are the language for that. Gambler's ruin is the cleanest first
+    example, and it's a good test of whether the machinery actually makes sense.
+  </p>
+
+  <h2>The one idea: memorylessness</h2>
+  <p>
+    A sequence of random states X₀, X₁, X₂, … is a <strong>Markov chain</strong> if the
+    next step depends only on where you are now, not on how you got there.
+  </p>
+  <div class="box">
+    P(Xₙ₊₁ = j | Xₙ = i, Xₙ₋₁, …, X₀) = P(Xₙ₊₁ = j | Xₙ = i)
+  </div>
+  <p>
+    Before reading on: if you flip a fair coin and keep a running total of heads minus
+    tails, is that running total a Markov chain? What information would you need to
+    predict the next value?
+  </p>
+  <details>
+    <summary>Check your thinking</summary>
+    <p>
+      Yes. The next total is the current total ±1, each with probability ½. Nothing
+      about the earlier flips matters once you know the current total. That's exactly
+      the random walk we'll use below.
+    </p>
+  </details>
+
+  <h2>The transition matrix</h2>
+  <p>
+    Label the states 1, …, m. Put the probability of going from state i to state j in
+    row i, column j:
+  </p>
+  <div class="box">
+    Pᵢⱼ = P(Xₙ₊₁ = j | Xₙ = i)
+  </div>
+  <p>
+    Every entry is non-negative and <strong>every row sums to 1</strong>, since from
+    state i you have to go somewhere. Two facts make the matrix worth having:
+  </p>
+  <ul>
+    <li>The n-step probabilities are the entries of the matrix power Pⁿ, so
+    P(Xₙ = j | X₀ = i) = (Pⁿ)ᵢⱼ. This follows from summing over intermediate states,
+    which is precisely matrix multiplication (the Chapman–Kolmogorov equations).</li>
+    <li>If μ is a row vector of probabilities for where the chain is now, then μP is the
+    distribution one step later.</li>
+  </ul>
+  <p class="try">
+    Try it: why does (P²)ᵢⱼ equal the sum over k of Pᵢₖ Pₖⱼ? Say in words what each
+    term in that sum represents.
+  </p>
+
+  <h2>Gambler's ruin as a chain</h2>
+  <p>
+    You start with £i. Each round you win £1 with probability p, or lose £1 with
+    probability q = 1 − p. You stop when you hit £0 (ruin) or £N (target). The states
+    are 0, 1, …, N, and 0 and N are <strong>absorbing</strong>: once you're there, you
+    stay. For N = 4 and a fair game (p = ½), the transition matrix is:
+  </p>
+  <div class="matrix-wrap">
+    <table class="matrix" aria-label="Transition matrix for gambler's ruin with N equals 4">
+      <tr><th></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+      <tr><th>0</th><td class="abs">1</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+      <tr><th>1</th><td>½</td><td>0</td><td>½</td><td>0</td><td>0</td></tr>
+      <tr><th>2</th><td>0</td><td>½</td><td>0</td><td>½</td><td>0</td></tr>
+      <tr><th>3</th><td>0</td><td>0</td><td>½</td><td>0</td><td>½</td></tr>
+      <tr><th>4</th><td>0</td><td>0</td><td>0</td><td>0</td><td class="abs">1</td></tr>
+    </table>
+  </div>
+  <p>
+    You <em>could</em> compute Pⁿ for large n and read off the limit, but there's a much
+    faster route for absorption questions.
+  </p>
+
+  <h2>First-step analysis</h2>
+  <p>
+    Let hᵢ be the probability of reaching N before 0, starting from i. Condition on the
+    first round. Whatever happens, the chain restarts from the new state, by
+    memorylessness:
+  </p>
+  <div class="box gold">
+    <span class="label">Recurrence</span>
+    hᵢ = p·hᵢ₊₁ + q·hᵢ₋₁, with h₀ = 0 and h_N = 1
+  </div>
+  <p>
+    Before I solve it: in the fair case p = q = ½, rearrange the recurrence into a
+    statement about the differences hᵢ₊₁ − hᵢ. What does it say about them, and what kind
+    of function must hᵢ be?
+  </p>
+  <details>
+    <summary>Check your thinking</summary>
+    <p>
+      With p = q = ½ the recurrence becomes hᵢ₊₁ − hᵢ = hᵢ − hᵢ₋₁. Every step has the
+      same size, so hᵢ is linear in i. The boundary conditions h₀ = 0 and h_N = 1 then
+      force:
+    </p>
+    <div class="box"><span class="label">Fair game</span>hᵢ = i / N</div>
+    <p>
+      Your chance of reaching the target is just your starting fraction of it. Starting
+      at £1 with a target of £4 gives ¼.
+    </p>
+  </details>
+
+  <h2>The unfair game</h2>
+  <p>
+    For p ≠ q, try solutions of the form hᵢ = xⁱ. Substituting gives the characteristic
+    equation p·x² − x + q = 0, which factors as (x − 1)(p·x − q) = 0. The roots are 1
+    and r = q/p, so hᵢ = A + B·rⁱ, and the boundary conditions fix A and B:
+  </p>
+  <div class="box gold">
+    <span class="label">Unfair game, r = q/p</span>
+    hᵢ = (1 − rⁱ) / (1 − r^N)
+  </div>
+  <p>
+    Sanity check worth doing yourself: let p → ½, so r → 1. The formula becomes 0/0.
+    Apply L'Hôpital's rule (treating r as the variable) and see whether you recover
+    i/N.
+  </p>
+
+  <h2>How long does it last?</h2>
+  <p>
+    Let Dᵢ be the expected number of rounds until absorption. First-step analysis again,
+    but now each round costs 1:
+  </p>
+  <div class="box">
+    Dᵢ = 1 + p·Dᵢ₊₁ + q·Dᵢ₋₁, with D₀ = D_N = 0
+  </div>
+  <p>
+    In the fair case, guess a quadratic. Which one satisfies both boundary conditions?
+  </p>
+  <details>
+    <summary>Check your thinking</summary>
+    <p>
+      Dᵢ = i(N − i). Check: Dᵢ₊₁ + Dᵢ₋₁ − 2Dᵢ = −2, so
+      ½Dᵢ₊₁ + ½Dᵢ₋₁ = Dᵢ − 1, which rearranges to Dᵢ = 1 + ½Dᵢ₊₁ + ½Dᵢ₋₁. It vanishes
+      at 0 and N. Starting in the middle of a long game is where the expected duration
+      is largest.
+    </p>
+  </details>
+
+  <h2>The general recipe</h2>
+  <ul>
+    <li>Identify the states, and which are absorbing.</li>
+    <li>Define the quantity you want as a function of the starting state (a probability
+    or an expected time).</li>
+    <li>Condition on the first step to get a recurrence, and write down the boundary
+    conditions at the absorbing states.</li>
+    <li>Solve the recurrence: linear or quadratic guesses for fair walks, geometric
+    ones (rⁱ) for biased walks.</li>
+  </ul>
+  <p>
+    The same recipe handles escape probabilities in the random walk / electric circuit
+    analogy: hᵢ is a harmonic function, meaning it equals the average of its neighbours,
+    exactly like a voltage in a resistor network with fixed potentials at the ends.
+  </p>
+</article>
+</body>
+</html>
