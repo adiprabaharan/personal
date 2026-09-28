@@ -110,14 +110,7 @@
     tails, is that running total a Markov chain? What information would you need to
     predict the next value?
   </p>
-  <details>
-    <summary>Check your thinking</summary>
-    <p>
-      Yes. The next total is the current total ±1, each with probability ½. Nothing
-      about the earlier flips matters once you know the current total. That's exactly
-      the random walk we'll use below.
-    </p>
-  </details>
+
 
   <h2>The transition matrix</h2>
   <p>
@@ -176,12 +169,7 @@
     hᵢ = p·hᵢ₊₁ + q·hᵢ₋₁, with h₀ = 0 and h_N = 1
   </div>
   <p>
-    Before I solve it: in the fair case p = q = ½, rearrange the recurrence into a
-    statement about the differences hᵢ₊₁ − hᵢ. What does it say about them, and what kind
-    of function must hᵢ be?
   </p>
-  <details>
-    <summary>Check your thinking</summary>
     <p>
       With p = q = ½ the recurrence becomes hᵢ₊₁ − hᵢ = hᵢ − hᵢ₋₁. Every step has the
       same size, so hᵢ is linear in i. The boundary conditions h₀ = 0 and h_N = 1 then
